@@ -113,7 +113,7 @@ func (s Server) Find(lat, long float64, zoom int) (image.Image, image.Point, int
 }
 
 // StaticMap patches together a image.Image of widht*height with lat and long in center. Zoom is the zoom level.
-func (s Server) StaticMap(width, height, zoom int, lat, long float64) (image.Image, error) {
+func (s Server) StaticMap(width, height, zoom int, lat, long float64) (*image.RGBA, error) {
 	tileX, tileY, p := find(lat, long, zoom)
 
 	// Now we need to figure out a few things about the image
