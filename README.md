@@ -4,9 +4,32 @@ Slipee is a server, CLI tool and GO package for making static maps from a [slipp
 
 ## Motivation
 
-Slipee fills the need for a server (microservice) to serve static images to backend services in the [EIND](eind.no) tech stack. It is designed to do one thing, and one thing only:
+Slipee fills the need for a server (microservice) to serve static map images to backend services in the [EIND](eind.no) tech stack. It is designed to do one thing, and one thing only:
 
-> Provide static map images from a OSM-type tile server with a single, customizable, marker in the center of the image. The size and zoom of the image is adjustable.
+> Provide static map images from a OSM-type tile server. The size and zoom and center lat/long coordinates of the image is adjustable.
+
+## Example usage
+
+Run the server using the command `slipee`. It will listen on port 8090.
+
+Then visit the browser or curl an url like:
+
+`http://localhost:8090/?zoom=16&width=500&height=500&lat=59.926181&long=10.775909`
+
+## TODOs
+
+The following things needs to be done:
+
+* Add CLI params to specify tile server URL(s) and listen port
+* Put attribution on the image
+* Sanetize query params
+* Add marker
+* Handle edge cases (like 0 zoom, where canvas is bigger than 256x256)
+* Context
+* Add docs
+* Add docs for Varnish cache recommendations
+* Goreleaser
+* Docker container
 
 ## Alternatives
 
