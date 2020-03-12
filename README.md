@@ -22,7 +22,6 @@ The following things needs to be done:
 
 * Add CLI params to specify tile server URL(s) and listen port
 * Sanetize query params
-* Add marker
 * Handle edge cases (like 0 zoom, where canvas is bigger than 256x256)
 * Context
 * Add docs

@@ -2,6 +2,9 @@ package main
 
 import (
 	// image formats supported are commonly jpg or png
+
+	"bytes"
+	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
@@ -53,6 +56,22 @@ func static(w http.ResponseWriter, req *http.Request) {
 	)
 
 	addLabel(img, width-(len(label))*8, height-8, label)
+
+	// to embed another PNG marker, use the following command in your terminal
+	// cat some-marker-24.png | base64 -w 0 | xclip -sel clip
+	data, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAABJElEQVRIieXUPUoDQRjG8R8qaKcgBsHKGPAAFoK2HkE9Qu5grXcQWysjaBsrrVIavYFFWkGNFpoiWuwGlt3ZuJtNIz7wws687/yf+dgZ/oNqOMEDPuLo4jjOVdIB+vjOiT72q8CHY+CjGE5iUvtl5ul4w0oINJtjcIS9VN8rznGPBhYSuXl84q7oCh5TM3zBeiJfjw2TNd2icHhPDT4N1JzJHnhGMzkGXwXq0n2DHFZQHdktqifyG7Jb1AmB5nIMbrGTaC+J9vgybh9iMTCmsBqK3YFkbJYxgHYJeLssHLZKrGJ7EgNoFYC3JoXDqugPGvdErFUxgOYYg2ZV+EgXAfjVtOBE9+ApAe9heZoGsCt6DgbxdyHlPdch9fCMG1yXmtqf1g/2CJPvQAzABQAAAABJRU5ErkJggg==")
+	marker, err := png.Decode(bytes.NewReader(data))
+
+	if err != nil {
+		fmt.Println("erorrro", err)
+	}
+	draw.Draw(
+		img,
+		image.Rectangle{image.Point{width/2 - 12, height/2 - 12}, image.Point{width, height}},
+		marker,
+		image.Point{0, 0},
+		draw.Over,
+	)
 
 	enc := png.Encoder{
 		CompressionLevel: png.BestSpeed,
