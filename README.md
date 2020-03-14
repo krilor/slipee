@@ -20,14 +20,12 @@ Then visit the browser or curl an url like:
 
 The following things needs to be done:
 
-* Add CLI params to specify tile server URL(s) and listen port
-* Sanetize query params
+* Goreleaser
+* Docker container
 * Handle edge cases (like 0 zoom, where canvas is bigger than 256x256)
 * Context
 * Add docs
 * Add docs for Varnish cache recommendations
-* Goreleaser
-* Docker container
 
 ## Alternatives
 
@@ -35,4 +33,4 @@ Check out the the list over at [Open Street Map wiki](https://wiki.openstreetmap
 
 ## The name
 
-_Slipee_ is taken from the [phonetic respelling](https://en.wikipedia.org/wiki/Pronunciation_respelling) of the word _slippy_, referring to a [slippy map](https://wiki.openstreetmap.org/wiki/Slippy_Map) map. Slipee is prononced as is, but in [IPA](https://en.wikipedia.org/wiki/International_Phonetic_Alphabet), its / ˈslɪp i /
+_Slipee_ is taken from the [phonetic respelling](https://en.wikipedia.org/wiki/Pronunciation_respelling) of the word _slippy_, referring to a [slippy map](https://wiki.openstreetmap.org/wiki/Slippy_Map) map. It's prononced as _slip-ee_, aka. in [IPA](https://en.wikipedia.org/wiki/International_Phonetic_Alphabet), its / ˈslɪp i /
