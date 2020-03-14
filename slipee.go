@@ -53,20 +53,21 @@ func init() {
 	flag.StringVar(&config.label, "label", env.String("SLIPEE_LABEL", "Slipee | © OpenStreetMap contributors"), "the label to add to the image")
 
 	flag.Usage = func() {
-		fmt.Println(`Usage: slipee <command> [flags]
+		fmt.Println(`USAGE:
+  slipee <command> [flags]
 
-Commands:
+COMMANDS:
   help           See this message
   serve          Serve slipee as a server`)
-		fmt.Fprint(flag.CommandLine.Output(), "\nFlags:\n")
+		fmt.Fprint(flag.CommandLine.Output(), "\nFLAGS:\n")
 		flag.PrintDefaults()
 
 		fmt.Println(`
-Environment variables:
-    Flags parameters can also be specified as environment variables.
-    Use uppercase flag name and the prefix 'SLIPEE_'.
-    Example: tileserver -> SLIPEE_TILESERVER
-    Command line flags have precedence over environment variables.`)
+ENVIRONMENT VARIABLES:
+  Flags parameters can also be specified as environment variables.
+  Use uppercase flag name and the prefix 'SLIPEE_'.
+  Example: tileserver -> SLIPEE_TILESERVER
+  Command line flags have precedence over environment variables.`)
 	}
 }
 
