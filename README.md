@@ -34,3 +34,11 @@ Check out the the list over at [Open Street Map wiki](https://wiki.openstreetmap
 ## The name
 
 _Slipee_ is taken from the [phonetic respelling](https://en.wikipedia.org/wiki/Pronunciation_respelling) of the word _slippy_, referring to a [slippy map](https://wiki.openstreetmap.org/wiki/Slippy_Map) map. It's prononced as _slip-ee_, aka. in [IPA](https://en.wikipedia.org/wiki/International_Phonetic_Alphabet), its / ˈslɪp i /
+
+
+## Releasing with goreleaser
+
+1. Check the current version tag using `git tag -l`
+2. Create a new tag using `git tag -a v0.0.1 -m "some message"`
+3. Push the tag using `git push origin v0.0.1`
+4. Run goreleaser `goreleaser`
