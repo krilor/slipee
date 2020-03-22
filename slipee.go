@@ -3,30 +3,22 @@ package main
 import (
 	// image formats supported are commonly jpg or png
 
-	"bytes"
-	"encoding/base64"
 	"flag"
 	"fmt"
-	"image"
-	"image/color"
-	"image/draw"
 	_ "image/jpeg"
-	"image/png"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"strconv"
 
 	"github.com/krilor/slipee/internal/env"
 	"github.com/krilor/slipee/internal/query"
+	"github.com/krilor/slipee/internal/stitch"
 	"github.com/krilor/slipee/internal/tile"
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/inconsolata"
-	"golang.org/x/image/math/fixed"
 )
 
-var s *tile.Server
+var s stitch.Stitcher
 
 // config holds cli variables
 var config struct {
@@ -39,6 +31,9 @@ var config struct {
 	address    string
 	port       int
 	label      string
+	pronto     bool
+	queue      int
+	cache      string
 }
 
 func init() {
@@ -51,6 +46,9 @@ func init() {
 	flag.IntVar(&config.port, "port", env.Int("SLIPEE_PORT", 7654), "port to listen on")
 	flag.StringVar(&config.tileserver, "tileserver", env.String("SLIPEE_TILESERVER", "https://a.tile.openstreetmap.org/${z}/${x}/${y}.png"), "the tile server url with ${[xyz]} type variables")
 	flag.StringVar(&config.label, "label", env.String("SLIPEE_LABEL", "Slipee | © OpenStreetMap contributors"), "the label to add to the image")
+	flag.BoolVar(&config.pronto, "pronto", env.Bool("SLIPEE_PRONTO", false), "if clients are allowed to buypass queue and ask for static images promtly")
+	flag.IntVar(&config.queue, "queue", env.Int("SLIPEE_QUEUE", 1000), "queue size")
+	flag.StringVar(&config.cache, "cache", env.String("SLIPEE_CACHE", "./slipee_cache"), "directory for cached maps")
 
 	flag.Usage = func() {
 		fmt.Println(`USAGE:
@@ -105,7 +103,9 @@ func main() {
 // serve handles the serve command
 func serve() {
 
-	s = tile.NewServer(config.tileserver)
+	// TODO - can we make things work without globals?
+	s = stitch.New(tile.NewServer(config.tileserver), config.queue, config.cache)
+	s.StartWorker()
 
 	http.HandleFunc("/", static)
 	log.Printf("server config: %+v\n", config)
@@ -147,86 +147,65 @@ func static(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	lat, _ := strconv.ParseFloat(req.URL.Query().Get("lat"), 64)
-	long, _ := strconv.ParseFloat(req.URL.Query().Get("long"), 64)
-
-	img, err := s.StaticMap(width, height, zoom, lat, long)
+	// TODO - min/max for lat/long
+	lat, _, err := query.Float64(uv, "lat", config.lat, nil, nil)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "an error occurred while getting image", 500)
+		http.Error(w, fmt.Sprintf("bad lat value: %s", err), 400)
 		return
 	}
 
-	// to embed another PNG marker, use the following command in your terminal
-	// cat some-marker-24.png | base64 -w 0 | xclip -sel clip
-	data, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAABmJLR0QA/wD/AP+gvaeTAAABJElEQVRIieXUPUoDQRjG8R8qaKcgBsHKGPAAFoK2HkE9Qu5grXcQWysjaBsrrVIavYFFWkGNFpoiWuwGlt3ZuJtNIz7wws687/yf+dgZ/oNqOMEDPuLo4jjOVdIB+vjOiT72q8CHY+CjGE5iUvtl5ul4w0oINJtjcIS9VN8rznGPBhYSuXl84q7oCh5TM3zBeiJfjw2TNd2icHhPDT4N1JzJHnhGMzkGXwXq0n2DHFZQHdktqifyG7Jb1AmB5nIMbrGTaC+J9vgybh9iMTCmsBqK3YFkbJYxgHYJeLssHLZKrGJ7EgNoFYC3JoXDqugPGvdErFUxgOYYg2ZV+EgXAfjVtOBE9+ApAe9heZoGsCt6DgbxdyHlPdch9fCMG1yXmtqf1g/2CJPvQAzABQAAAABJRU5ErkJggg==")
-	marker, _ := png.Decode(bytes.NewReader(data))
-
-	addLabel(img, config.label)
-	addMarker(img, marker)
-
-	enc := png.Encoder{
-		CompressionLevel: png.BestSpeed,
-	}
-
-	err = enc.Encode(w, img)
-
+	long, _, err := query.Float64(uv, "long", config.lat, nil, nil)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "an error occurred while serving image", 500)
+		http.Error(w, fmt.Sprintf("bad lat value: %s", err), 400)
 		return
 	}
 
-}
+	pronto := query.Bool(uv, "pronto") && config.pronto
 
-// addLabel is based on https://stackoverflow.com/a/38300583
-func addLabel(img *image.RGBA, label string) {
-
-	b := img.Bounds()
-	width := b.Dx()
-	height := b.Dy()
-
-	// adds white area for label
-	draw.DrawMask(
-		img,
-		image.Rectangle{image.Point{width - len(config.label)*8 - 16, height - 28}, image.Point{width, height}},
-		&image.Uniform{color.RGBA{255, 255, 255, 255}}, // white
-		image.Point{0, 0},
-		&image.Uniform{color.Alpha{196}},
-		image.Point{0, 0},
-		draw.Over,
-	)
-
-	x := width - (len(config.label))*8
-	y := height - 8
-
-	col := color.RGBA{0, 0, 0, 255}
-
-	// TODO make this point stuff more understandable
-	point := fixed.Point26_6{X: fixed.Int26_6(x * 64), Y: fixed.Int26_6(y * 64)}
-
-	d := &font.Drawer{
-		Dst:  img,
-		Src:  image.NewUniform(col),
-		Face: inconsolata.Regular8x16,
-		Dot:  point,
+	if req.Method == http.MethodPost {
+		err := s.Queue(width, height, zoom, lat, long, config.label)
+		if err != nil {
+			http.Error(w, "could not queue", 500)
+			return
+		}
 	}
-	d.DrawString(label)
-}
+	if req.Method != http.MethodGet {
+		http.Error(w, "http method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 
-func addMarker(img *image.RGBA, marker image.Image) {
+	var path string
+	if pronto {
+		path, err = s.StaticImage(width, height, zoom, lat, long, config.label)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "could not get static image", 500)
+			return
+		}
+	} else {
+		path = s.Stitch(width, height, zoom, lat, long, config.label)
+	}
 
-	b := img.Bounds()
-	width := b.Dx()
-	height := b.Dy()
+	if path == "" {
+		w.WriteHeader(http.StatusAccepted)
+		return // TODO - return a transparent image
+	}
 
-	draw.Draw(
-		img,
-		image.Rectangle{image.Point{width/2 - 12, height/2 - 12}, image.Point{width, height}},
-		marker,
-		image.Point{0, 0},
-		draw.Over,
-	)
+	b, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		http.Error(w, "could not read static image", 500)
+		return
+	}
+
+	_, err = w.Write(b)
+
+	if err != nil {
+		http.Error(w, "could not write image back", 500)
+		return
+	}
+
+	return
 }
 
 // Usage prints the cli usage

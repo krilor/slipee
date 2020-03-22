@@ -39,3 +39,14 @@ func String(key string, value string) string {
 	}
 	return str
 }
+
+// Bool returns true if the environment variable key is present, and defaults to value if it is not present.
+func Bool(key string, value bool) bool {
+	_, exists := os.LookupEnv(key)
+
+	if exists {
+		return true
+	}
+
+	return value
+}

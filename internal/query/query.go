@@ -69,3 +69,9 @@ func Float64(uv url.Values, key string, value float64, min, max *float64) (float
 
 	return queryValue, ok, nil
 }
+
+// Bool returns true if a query variable is present
+func Bool(uv url.Values, key string) bool {
+	_, present := uv[key]
+	return present
+}

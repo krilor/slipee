@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// latLimit is the upper/lower latitude limit for web map
+// latLimit is the upper/lower latitude limit for web mercator maps
 var latLimit float64 = (math.Atan(math.Sinh(math.Pi)) / (2.0 * math.Pi)) * 360.0
 
 // find takes a lat, long and zoom and returns a tile and a image.Point for the coordinate that represents the position.
