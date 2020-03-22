@@ -4,9 +4,43 @@ Slipee is a server, CLI tool and GO package for making static maps from a [slipp
 
 ## Motivation
 
-Slipee fills the need for a server (microservice) to serve static map images to backend services in the [EIND](eind.no) tech stack. It is designed to do one thing, and one thing only:
+Slipee fills the need for a server (microservice) to serve static map images to backend services in the [EIND](eind.no) tech stack.
+It provides static map images from a OSM-type tile server. The size, zoom and center lat/long coordinates of the image is adjustable. Images a cached on disk, with no eviction currently implemented.
 
-> Provide static map images from a OSM-type tile server. The size and zoom and center lat/long coordinates of the image is adjustable.
+### Request types
+
+Clients requests images on a single endpoint in one of three ways.
+
+#### NORMAL - `HTTP GET` - served from cache or queued for next request
+
+If the image exists in cache, it is served with HTTP 200. If not, then the request is queued with an empty HTTP 202 (Accepted) response.
+
+#### PRONTO - `HTTP GET` - synchronously/on the fly
+
+If the image is not cache, the server will generate and serve the image on the fly. Pronto is disabled by default.
+
+#### QUEUE - `HTTP POST` - queue for later
+
+The image is put on queue and served later on NORMAL requests.
+
+### Example usage
+
+Run the server using the command `slipee serve`. It will listen on port 8090.
+
+Then visit the browser or curl an url like:
+
+`http://localhost:7654/?zoom=16&width=500&height=500&lat=59.926181&long=10.775909`
+
+Supported query args are:
+
+* zoom
+* width
+* height
+* lat
+* long
+* pronto
+
+These are the same as the ones mentioned in configuration below.
 
 ## Installation
 
@@ -27,24 +61,6 @@ rm slipee.tar.gz
 go get -u github.com/krilor/slipee
 ```
 
-## Example usage
-
-Run the server using the command `slipee serve`. It will listen on port 8090.
-
-Then visit the browser or curl an url like:
-
-`http://localhost:7654/?zoom=16&width=500&height=500&lat=59.926181&long=10.775909`
-
-Supported query args are:
-
-* zoom
-* width
-* height
-* lat
-* long
-
-These are the same as the ones mentioned in configuration below.
-
 ## Configuration
 
 You can use command line flags or environment variables.
@@ -60,23 +76,29 @@ COMMANDS:
 
 FLAGS:
   -address string
-        the address to listen on
+    the address to listen on
+  -cache string
+    directory for cached maps (default "./slipee_cache")
   -height int
-        width in pixels (default 500)
+    width in pixels (default 500)
   -label string
-        the label to add to the image (default "Slipee | © OpenStreetMap contributors")
+    the label to add to the image (default "Slipee | © OpenStreetMap contributors")
   -lat float
-        latitude
+    latitude
   -long float
-        longitude
+    longitude
   -port int
-        port to listen on (default 7654)
+    port to listen on (default 7654)
+  -pronto
+    if clients are allowed to buypass queue and ask for static images promtly
+  -queue int
+    queue size (default 1000)
   -tileserver string
-        the tile server url with ${[xyz]} type variables (default "https://a.tile.openstreetmap.org/${z}/${x}/${y}.png")
+    the tile server url with ${[xyz]} type variables (default "https://a.tile.openstreetmap.org/${z}/${x}/${y}.png")
   -width int
-        width in pixels (default 500)
+    width in pixels (default 500)
   -zoom int
-        zoom level (default 16)
+    zoom level (default 16)
 
 ENVIRONMENT VARIABLES:
   Flags parameters can also be specified as environment variables.
