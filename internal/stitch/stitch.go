@@ -135,6 +135,13 @@ func (s *stitch) Queue(width int, height int, zoom int, lat float64, long float6
 		label,
 	}
 
+	path := filepath.Join(s.cache, r.path())
+
+	if _, err := os.Stat(path); err == nil {
+		// image allready exists in file cache
+		return nil
+	}
+
 	select {
 	case s.queue <- r:
 		return nil
