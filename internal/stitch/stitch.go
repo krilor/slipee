@@ -166,12 +166,6 @@ func (s *stitch) StaticImage(width int, height int, zoom int, lat float64, long 
 
 	os.MkdirAll(filepath.Dir(path), os.ModePerm) // TODO check err
 
-	f, err := os.Create(path)
-	if err != nil {
-		return "", errors.Wrapf(err, "could not create file %s", path)
-	}
-	defer f.Close()
-
 	img, err := s.server.StaticMap(width, height, zoom, lat, long)
 	if err != nil {
 		return "", errors.Wrap(err, "an error occurred while getting staticmap")
@@ -189,9 +183,16 @@ func (s *stitch) StaticImage(width int, height int, zoom int, lat float64, long 
 		CompressionLevel: png.BestSpeed,
 	}
 
+	f, err := os.Create(path)
+	if err != nil {
+		return "", errors.Wrapf(err, "could not create file %s", path)
+	}
+
 	err = enc.Encode(f, img)
+	f.Close()
 
 	if err != nil {
+		os.Remove(path)
 		return "", errors.Wrapf(err, "could not encode image")
 	}
 
